@@ -1,0 +1,4 @@
+UI_EN = {
+    UI_PhunWalletWallet = "Wallet",
+    UI_PhunWalletWalletPanel = "This is yo wallet",
+}

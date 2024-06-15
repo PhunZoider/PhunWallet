@@ -1,0 +1,10 @@
+VERSION = 1,
+
+option PhunWallet.PhunWallet_Jalapenos
+{ 
+    type = boolean,
+    default = true,
+    page = PhunWallet,
+    translation = PhunWallet_Jalapenos 
+}
+

@@ -1,0 +1,7 @@
+IGUI_EN = {
+    IGUI_PhunWallet.Current = "Balance",
+    IGUI_PhunWallet.CurrentDesc = "",
+    IGUI_PhunWallet.Savings = "Savings",
+    IGUI_PhunWallet.SavingsDesc = "Each time you spawn a new character, any savings will replenish your balance",
+    IGUI_PhunWallet.Empty = "This is rather Empty",
+}

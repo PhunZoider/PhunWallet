@@ -1,0 +1,6 @@
+Sandbox_EN = {
+    Sandbox_PhunWallet = "PhunWallet"
+    Sandbox_PhunWallet_Jalapenos = "Show Jalapenos",
+    Sandbox_PhunWallet_Jalapenos_tooltip = "Display difficulty level with jalapenos",
+
+}
