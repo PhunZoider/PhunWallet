@@ -73,7 +73,24 @@ function PhunWallet:processCurrencyLabelHook(key)
     end
 end
 
+function PhunWallet:processPrePurchaseHook(playerObj, key, value)
+    -- mutate value, but don't actually change the wallet value
+    -- this is used to ensure the player has enough currency to make a purchase
+    if value and playerObj then
+        local wallet = self:getPlayerData(playerObj).wallet or {}
+        local current = wallet.current or {}
+        if current[key] and current[key] > 0 then
+            if current[key] < value then
+                value = value - current[key]
+            elseif current[key] >= value then
+                value = 0
+            end
+        end
+    end
+end
+
 function PhunWallet:processPurchaseHook(playerObj, key, value)
+    -- mutate value AND change the wallet value
     if value and playerObj then
         local wallet = self:getPlayerData(playerObj).wallet or {}
         local current = wallet.current or {}
@@ -126,6 +143,10 @@ function PhunWallet:ini()
 
             PhunMart:addHook("preSatisfyPrice", function(playerObj, item, satisfied)
                 self:satisfyPriceHook(playerObj, item, satisfied)
+            end)
+
+            PhunMart:addHook("prePurchase", function(playerObj, key, value)
+                self:processPrePurchaseHook(playerObj, key, value)
             end)
 
             PhunMart:addHook("purchase", function(playerObj, key, value)
