@@ -56,6 +56,7 @@ function PhunWallet:reload()
         self.currencies = currencies
         ModData.add("PhunWallet_Currencies", currencies)
         ModData.transmit("PhunWallet_Currencies")
+        self:debug("Currency data loaded", self.currencies)
     end
 
 end
@@ -115,11 +116,13 @@ end
 local Commands = {}
 
 Commands[PhunWallet.commands.getWallet] = function(playerObj, args)
+    print("PhunWallet.commands.getWallet requested")
     local wallet = PhunWallet:getPlayerData(playerObj:getUsername()).wallet or {}
     local data = {
         playerIndex = playerObj:getPlayerNum(),
         wallet = wallet
     }
+    PhunTools:printTable(data)
     sendServerCommand(playerObj, PhunWallet.name, PhunWallet.commands.getWallet, data)
 end
 
@@ -143,12 +146,6 @@ Events.OnClientCommand.Add(function(module, command, playerObj, arguments)
     if module == PhunWallet.name and Commands[command] then
         Commands[command](playerObj, arguments)
     end
-end)
-
-Events.OnInitGlobalModData.Add(function()
-    PhunWallet:ini()
-    PhunWallet.currencies = ModData.getOrCreate("PhunWallet_Currencies")
-    PhunWallet:reload()
 end)
 
 Events.OnCharacterDeath.Add(function(playerObj)
@@ -198,3 +195,6 @@ local function onContainerFill(roomtype, containertype, container)
 end
 
 Events.OnFillContainer.Add(onContainerFill)
+Events.OnInitGlobalModData.Add(function()
+    PhunWallet:ini()
+end)

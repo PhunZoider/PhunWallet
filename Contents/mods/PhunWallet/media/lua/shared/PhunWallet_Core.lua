@@ -16,6 +16,9 @@ PhunWallet = {
         OnPhunWalletChanged = "OnPhunWalletChanged",
         OnPhunWalletCurrenciesUpdated = "OnPhunWalletCurrenciesUpdated"
     },
+    settings = {
+        debug = true
+    },
     bounds = {},
     zones = {}
 }
@@ -23,6 +26,13 @@ PhunWallet = {
 for _, event in pairs(PhunWallet.events) do
     if not Events[event] then
         LuaEventManager.AddEvent(event)
+    end
+end
+
+function PhunWallet:debug(...)
+    if self.settings.debug then
+        local args = {...}
+        PhunTools:debug(args)
     end
 end
 
@@ -63,6 +73,22 @@ function PhunWallet:processCurrencyLabelHook(key)
     end
 end
 
+function PhunWallet:processPurchaseHook(playerObj, key, value)
+    if value and playerObj then
+        local wallet = self:getPlayerData(playerObj).wallet or {}
+        local current = wallet.current or {}
+        if current[key] and current[key] > 0 then
+            if current[key] < value then
+                self.queue:add(playerObj, key, (current[key] * -1))
+                value = value - current[key]
+            elseif current[key] >= value then
+                self.queue:add(playerObj, key, (value * -1))
+                value = 0
+            end
+        end
+    end
+end
+
 function PhunWallet:satisfyPriceHook(playerObj, item, satisfied)
     if satisfied and playerObj and playerObj then
 
@@ -78,7 +104,6 @@ function PhunWallet:satisfyPriceHook(playerObj, item, satisfied)
                 end
             end
         end
-
     end
 end
 
@@ -86,15 +111,14 @@ function PhunWallet:ini()
     if not self.inied then
         self.inied = true
         if isServer() then
+            self.currencies = ModData.getOrCreate("PhunWallet_Currencies")
             local playerData = ModData.getOrCreate("PhunWallet_PlayerData")
             self.players = playerData
-        end
-
-        if isServer() then
             self:reload()
         end
 
         if PhunMart then
+            print("PhunWallet: Adding hooks to PhunMart")
             -- add some hooks
             PhunMart:addHook("currencyLabel", function(key)
                 return self:processCurrencyLabelHook(key)
@@ -103,6 +127,12 @@ function PhunWallet:ini()
             PhunMart:addHook("preSatisfyPrice", function(playerObj, item, satisfied)
                 self:satisfyPriceHook(playerObj, item, satisfied)
             end)
+
+            PhunMart:addHook("purchase", function(playerObj, key, value)
+                self:processPurchaseHook(playerObj, key, value)
+            end)
+        else
+            print("PhunWallet: PhunMart not found, cannot add hooks")
         end
 
     end

@@ -196,6 +196,8 @@ Commands[PhunWallet.commands.addToWallet] = function(arguments)
 end
 
 Commands[PhunWallet.commands.getWallet] = function(arguments)
+    print("RECEIVED WALLET DATA")
+    PhunTools:printTable(arguments)
     local player = getSpecificPlayer(arguments.playerIndex)
     if not PhunWallet.players[player:getUsername()] then
         PhunWallet.players[player:getUsername()] = {}
@@ -203,6 +205,28 @@ Commands[PhunWallet.commands.getWallet] = function(arguments)
     PhunWallet.players[player:getUsername()].wallet = arguments.wallet
     triggerEvent(PhunWallet.events.OnPhunWalletChanged, arguments.wallet)
 end
+
+Events[PhunWallet.events.OnPhunWalletChanged].Add(function(data)
+    print("OnPhunWalletChanged")
+    if PhunWalletContents.instance then
+        PhunWalletContents.instance:rebuild()
+    end
+    -- ISPhunWalletWalletTab.wallet = data
+    -- if ISPhunWalletWalletTab.rebuild then
+    --     ISPhunWalletWalletTab:rebuild()
+    -- end
+end)
+
+Events[PhunWallet.events.OnPhunWalletCurrenciesUpdated].Add(function(data)
+    print("OnPhunWalletCurrenciesUpdated")
+    if PhunWalletContents.instance then
+        PhunWalletContents.instance:rebuild()
+    end
+    -- ISPhunWalletWalletTab.currencies = data
+    -- if ISPhunWalletWalletTab.rebuild then
+    --     ISPhunWalletWalletTab:rebuild()
+    -- end
+end)
 
 Events.OnPlayerUpdate.Add(function(playerObj)
     queue:process()
@@ -227,6 +251,13 @@ Events.onLoadModDataFromServer.Add(function(modData)
     end
 end)
 
-Events.OnInitGlobalModData.Add(function()
+local function setup()
+    Events.EveryOneMinute.Remove(setup)
+    PhunWallet:ini()
     ModData.request("PhunWallet_Currencies")
+end
+Events.EveryOneMinute.Add(setup)
+
+Events.EveryTenMinutes.Add(function()
+    sendClientCommand(getSpecificPlayer(0), PhunWallet.name, PhunWallet.commands.getWallet, {})
 end)
