@@ -1,6 +1,7 @@
 if not isServer() then
     return
 end
+local sandbox = SandboxVars.PhunWallet
 local PhunWallet = PhunWallet
 local modList
 
@@ -157,25 +158,36 @@ Events.OnCharacterDeath.Add(function(playerObj)
         local current = wallet.current or {}
         local bound = wallet.bound or {}
 
-        for k, v in pairs(bound) do
-            local val = 0
-            toAdd[k] = v
-        end
-        for k, v in pairs(current) do
-            if not toAdd[k] then
+        if sandbox.DropWalletOnDeath then
+            for k, v in pairs(wallet.current) do
+                local currency = PhunWallet.currencies[k]
                 -- skip bound entries
-                toAdd[k] = v
+                if not currency.boa then
+                    local rate = 100
+                    if currency.returnRate then
+                        rate = currency.returnRate
+                    elseif sandbox.DefaultReturnRate then
+                        rate = sandbox.DefaultReturnRate
+                    end
+                    toAdd[k] = math.floor(v * (rate / 100))
+                end
             end
+
+            item:setName(playerObj:getDescriptor():getForename() .. "'s wallet")
+            item:getModData().PhunWallet = {
+                owner = playerObj:getUsername(),
+                wallet = {
+                    current = toAdd
+                }
+            }
+        end
+        wallet.current = {}
+
+        for k, v in pairs(wallet.bound) do
+            wallet.current[k] = v
         end
 
-        PhunWallet:getPlayerData(playerObj).wallet = {
-            current = {},
-            bound = {}
-        }
-        item:getModData().PhunWallet = {
-            owner = playerObj:getUsername(),
-            wallet = wallet
-        }
+        PhunTools:printTable(PhunWallet:getPlayerData(playerObj).wallet)
     end
 end)
 

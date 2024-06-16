@@ -1,10 +1,27 @@
 VERSION = 1,
 
-option PhunWallet.PhunWallet_Jalapenos
+option PhunWallet.DropWalletOnDeath
 { 
     type = boolean,
     default = true,
     page = PhunWallet,
-    translation = PhunWallet_Jalapenos 
+    translation = PhunWallet_DropWallet 
 }
 
+option PhunWallet.OnlyPickupOwnWallet
+{ 
+    type = boolean,
+    default = true,
+    page = PhunWallet,
+    translation = PhunWallet_OnlyPickupOwnWallet 
+}
+
+option PhunWallet.DefaultReturnRate
+{ 
+    type = integer, 
+    default = 100, 
+    min = 1,
+    max = 100,
+    page = PhunWallet,
+    translation = PhunWallet_DefaultReturnRate 
+}

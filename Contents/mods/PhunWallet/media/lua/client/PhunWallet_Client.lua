@@ -3,7 +3,7 @@ if isServer() then
 end
 require 'ISInventoryTransferAction'
 local PhunWallet = PhunWallet
-
+local sandbox = SandboxVars.PhunWallet
 local Commands = {}
 
 local queue = {
@@ -79,7 +79,7 @@ function ISInventoryTransferAction:new(player, item, srcContainer, destContainer
         if itemType == "PhunWallet.DroppedWallet" then
             local wallet = item:getModData().PhunWallet
             if wallet then
-                if player:getUsername() == wallet.owner and wallet.wallet then
+                if wallet.wallet and (not sandbox.OnlyPickupOwnWallet or player:getUsername() == wallet.owner) then
                     for k, v in pairs(wallet.wallet.current or {}) do
                         queue:add(player, k, v)
                         queue:process()
@@ -254,10 +254,14 @@ end)
 local function setup()
     Events.EveryOneMinute.Remove(setup)
     PhunWallet:ini()
+    sendClientCommand(getSpecificPlayer(0), PhunWallet.name, PhunWallet.commands.getWallet, {})
     ModData.request("PhunWallet_Currencies")
 end
 Events.EveryOneMinute.Add(setup)
-
-Events.EveryTenMinutes.Add(function()
-    sendClientCommand(getSpecificPlayer(0), PhunWallet.name, PhunWallet.commands.getWallet, {})
+Events.OnCreatePlayer.Add(function(index, playerObj)
+    print("SSSSSSS")
+    sendClientCommand(playerObj, PhunWallet.name, PhunWallet.commands.getWallet, {})
 end)
+-- Events.EveryTenMinutes.Add(function()
+--     sendClientCommand(getSpecificPlayer(0), PhunWallet.name, PhunWallet.commands.getWallet, {})
+-- end)

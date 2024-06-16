@@ -1,6 +1,12 @@
 Sandbox_EN = {
     Sandbox_PhunWallet = "PhunWallet"
-    Sandbox_PhunWallet_Jalapenos = "Show Jalapenos",
-    Sandbox_PhunWallet_Jalapenos_tooltip = "Display difficulty level with jalapenos",
+    Sandbox_PhunWallet_DropWallet = "Drop on death",
+    Sandbox_PhunWallet_DropWallet_tooltip = "Drops wallet on death",
+
+    Sandbox_PhunWallet_OnlyPickupOwnWallet = "Can only pickup own",
+    Sandbox_PhunWallet_OnlyPickupOwnWallet_tooltip = "Do not allow others to pick up wallet",
+
+    Sandbox_PhunWallet_DefaultReturnRate = "Default Return Rate",
+    Sandbox_PhunWallet_DefaultReturnRate_tooltip = "Default amount to spawn in wallet",
 
 }

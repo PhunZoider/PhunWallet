@@ -9,7 +9,7 @@ module PhunWallet
         type = Normal,
         DisplayName = Wallet
         Weight = 1,
-        Icon = Wallet
+        Icon = PhunWallet
     }
 
 }
