@@ -1,4 +1,6 @@
 version=1
+id=3270424171
 title=PhunWallet
 description=BoP Wallet and currency management
 tags=Build 41
+visibility=public
