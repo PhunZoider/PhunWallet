@@ -87,7 +87,7 @@ end
 
 function PhunWalletContents:rebuild()
     self.datas:clear();
-    for k, v in pairs(PhunWallet.currencies) do
+    for k, v in pairs(PhunWallet.currencies or {}) do
         local item = getScriptManager():getItem(v.type)
         if item then
             v.label = item:getDisplayName()

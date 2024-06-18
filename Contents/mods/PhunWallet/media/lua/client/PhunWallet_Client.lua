@@ -79,7 +79,8 @@ function ISInventoryTransferAction:new(player, item, srcContainer, destContainer
         if itemType == "PhunWallet.DroppedWallet" then
             local wallet = item:getModData().PhunWallet
             if wallet then
-                if wallet.wallet and (not sandbox.OnlyPickupOwnWallet or player:getUsername() == wallet.owner) then
+                if wallet.wallet and
+                    (not sandbox.PhunWallet_OnlyPickupOwnWallet or player:getUsername() == wallet.owner) then
                     for k, v in pairs(wallet.wallet.current or {}) do
                         queue:add(player, k, v)
                         queue:process()
@@ -138,25 +139,9 @@ end
 
 local function CheckZedSpecialDrops(zombie)
 
-    local wasSprinter = zombie:getModData().isSprinter == true or
-                            (zombie:getModData().PhunRunners and zombie:getModData().PhunRunners.sprinting == true)
-    print("Dead body found sprinter? " .. tostring(wasSprinter))
     for k, v in pairs(PhunWallet.currencies) do
         if v.removeFromZeds and zombie:getInventory():containsType(v.type) then
-            print("Removing " .. v.type .. " from dead body")
             zombie:getInventory():Remove(v.type)
-        elseif not wasSprinter and v.zedSpawnChance > 0 then
-            print("Checking " .. v.type .. " " .. v.zedSpawnChance .. " spawn chance")
-            if ZombRand(100) <= v.zedSpawnChance then
-                print("Adding " .. v.type .. " to dead body")
-                zombie:getInventory():AddItems(v.type, ZombRand(v.spawnMin or 1, v.spawnMax or 1))
-            end
-        elseif wasSprinter and v.zedSprinterSpawnChance > 0 then
-            print("Checking " .. v.type .. " " .. v.zedSprinterSpawnChance .. " sprinter spawn chance")
-            if ZombRand(100) <= v.zedSprinterSpawnChance then
-                print("Adding " .. v.type .. " to dead body")
-                zombie:getInventory():AddItems(v.type, ZombRand(v.spawnMin or 1, v.spawnMax or 1))
-            end
         end
     end
     zombie:getModData().PhunRunners = nil
@@ -164,15 +149,15 @@ end
 
 Events.OnZombieDead.Add(CheckZedSpecialDrops);
 
-local function setup()
-    Events.EveryOneMinute.Remove(setup)
-    for i = 1, getOnlinePlayers():size() do
-        local p = getOnlinePlayers():get(i - 1)
-        sendClientCommand(p, PhunWallet.name, PhunWallet.commands.getWallet, {})
-    end
-end
+-- local function setup()
+--     Events.EveryOneMinute.Remove(setup)
+--     for i = 1, getOnlinePlayers():size() do
+--         local p = getOnlinePlayers():get(i - 1)
+--         sendClientCommand(p, PhunWallet.name, PhunWallet.commands.getWallet, {})
+--     end
+-- end
 
-Events.EveryOneMinute.Add(setup)
+-- Events.EveryOneMinute.Add(setup)
 
 Events.OnServerCommand.Add(function(module, command, arguments)
     if module == PhunWallet.name and Commands[command] then
@@ -196,36 +181,25 @@ Commands[PhunWallet.commands.addToWallet] = function(arguments)
 end
 
 Commands[PhunWallet.commands.getWallet] = function(arguments)
-    print("RECEIVED WALLET DATA")
-    PhunTools:printTable(arguments)
     local player = getSpecificPlayer(arguments.playerIndex)
     if not PhunWallet.players[player:getUsername()] then
         PhunWallet.players[player:getUsername()] = {}
     end
+    PhunWallet.currencies = arguments.currencies
     PhunWallet.players[player:getUsername()].wallet = arguments.wallet
     triggerEvent(PhunWallet.events.OnPhunWalletChanged, arguments.wallet)
 end
 
 Events[PhunWallet.events.OnPhunWalletChanged].Add(function(data)
-    print("OnPhunWalletChanged")
     if PhunWalletContents.instance then
         PhunWalletContents.instance:rebuild()
     end
-    -- ISPhunWalletWalletTab.wallet = data
-    -- if ISPhunWalletWalletTab.rebuild then
-    --     ISPhunWalletWalletTab:rebuild()
-    -- end
 end)
 
 Events[PhunWallet.events.OnPhunWalletCurrenciesUpdated].Add(function(data)
-    print("OnPhunWalletCurrenciesUpdated")
     if PhunWalletContents.instance then
         PhunWalletContents.instance:rebuild()
     end
-    -- ISPhunWalletWalletTab.currencies = data
-    -- if ISPhunWalletWalletTab.rebuild then
-    --     ISPhunWalletWalletTab:rebuild()
-    -- end
 end)
 
 Events.OnPlayerUpdate.Add(function(playerObj)
@@ -255,13 +229,16 @@ local function setup()
     Events.EveryOneMinute.Remove(setup)
     PhunWallet:ini()
     sendClientCommand(getSpecificPlayer(0), PhunWallet.name, PhunWallet.commands.getWallet, {})
-    ModData.request("PhunWallet_Currencies")
 end
 Events.EveryOneMinute.Add(setup)
 Events.OnCreatePlayer.Add(function(index, playerObj)
-    print("SSSSSSS")
+    PhunWallet:ini()
     sendClientCommand(playerObj, PhunWallet.name, PhunWallet.commands.getWallet, {})
 end)
--- Events.EveryTenMinutes.Add(function()
---     sendClientCommand(getSpecificPlayer(0), PhunWallet.name, PhunWallet.commands.getWallet, {})
--- end)
+
+if PhunZones then
+    Events[PhunZones.events.OnPhunZonesPlayerLocationChanged].Add(
+        function(playerObj, location, oldLocation)
+            PhunWallet.zoneInfo[playerObj:getUsername()] = location
+        end)
+end

@@ -1,6 +1,6 @@
 VERSION = 1,
 
-option PhunWallet.DropWalletOnDeath
+option PhunWallet.PhunWallet_DropWallet
 { 
     type = boolean,
     default = true,
@@ -8,7 +8,7 @@ option PhunWallet.DropWalletOnDeath
     translation = PhunWallet_DropWallet 
 }
 
-option PhunWallet.OnlyPickupOwnWallet
+option PhunWallet.PhunWallet_OnlyPickupOwnWallet
 { 
     type = boolean,
     default = true,
@@ -16,7 +16,7 @@ option PhunWallet.OnlyPickupOwnWallet
     translation = PhunWallet_OnlyPickupOwnWallet 
 }
 
-option PhunWallet.DefaultReturnRate
+option PhunWallet.PhunWallet_DefaultReturnRate
 { 
     type = integer, 
     default = 100, 

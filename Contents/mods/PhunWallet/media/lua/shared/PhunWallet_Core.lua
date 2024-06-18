@@ -10,8 +10,11 @@ PhunWallet = {
         addToWallet = "addToWallet"
     },
     ticks = 100,
+    playersModified = 0,
+    playersSaved = 0,
     players = {},
     currencies = {},
+    zoneInfo = {},
     events = {
         OnPhunWalletChanged = "OnPhunWalletChanged",
         OnPhunWalletCurrenciesUpdated = "OnPhunWalletCurrenciesUpdated"
@@ -128,14 +131,12 @@ function PhunWallet:ini()
     if not self.inied then
         self.inied = true
         if isServer() then
-            self.currencies = ModData.getOrCreate("PhunWallet_Currencies")
-            local playerData = ModData.getOrCreate("PhunWallet_PlayerData")
-            self.players = playerData
+            -- self.currencies = ModData.getOrCreate("PhunWallet_Currencies")
+            self.players = PhunTools:loadTable("PhunWallet_Players.lua")
             self:reload()
         end
 
         if PhunMart then
-            print("PhunWallet: Adding hooks to PhunMart")
             -- add some hooks
             PhunMart:addHook("currencyLabel", function(key)
                 return self:processCurrencyLabelHook(key)
@@ -152,8 +153,6 @@ function PhunWallet:ini()
             PhunMart:addHook("purchase", function(playerObj, key, value)
                 self:processPurchaseHook(playerObj, key, value)
             end)
-        else
-            print("PhunWallet: PhunMart not found, cannot add hooks")
         end
 
     end

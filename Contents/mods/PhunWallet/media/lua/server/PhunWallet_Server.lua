@@ -5,30 +5,6 @@ local sandbox = SandboxVars.PhunWallet
 local PhunWallet = PhunWallet
 local modList
 
-local function loadData(filename)
-
-    local res
-    local data = {}
-    local fileReaderObj = getFileReader(filename, true)
-    local line = fileReaderObj:readLine()
-    local startsWithReturn = nil
-    while line do
-        if startsWithReturn == nil then
-            startsWithReturn = PhunTools:startsWith(line, "return")
-        end
-        data[#data + 1] = line
-        line = fileReaderObj:readLine()
-    end
-    fileReaderObj:close()
-    if startsWithReturn == true then
-        res = loadstring(table.concat(data, "\n"))()
-    else
-        res = loadstring("return {" .. table.concat(data, "\n") .. "}")()
-    end
-    return res
-
-end
-
 local function buildCurrencyLookup(data)
     local result = {}
     local removeItemsOnFillCheck = false
@@ -51,13 +27,12 @@ end
 
 function PhunWallet:reload()
 
-    local data = loadData("PhunWallet_Currencies.lua")
+    local data = PhunTools:loadTable("PhunWallet_Currencies.lua")
     local currencies = buildCurrencyLookup(data)
     if currencies then
         self.currencies = currencies
         ModData.add("PhunWallet_Currencies", currencies)
         ModData.transmit("PhunWallet_Currencies")
-        self:debug("Currency data loaded", self.currencies)
     end
 
 end
@@ -88,6 +63,8 @@ function PhunWallet:adjustWallet(playerObj, values, doNotAddBound)
 
             local target = wallet.current
 
+            PhunTools:addLogEntry("PhunWallet:adjustWallet", playerObj:getUsername(), k, v)
+
             if target[k] then
                 target[k] = target[k] + v
             else
@@ -105,25 +82,33 @@ function PhunWallet:adjustWallet(playerObj, values, doNotAddBound)
                     wallet.bound[k] = v
                 end
             end
+            self.playersModified = getTimestamp()
         end
     end
 
     sendServerCommand(playerObj, PhunWallet.name, PhunWallet.commands.getWallet, {
         playerIndex = playerObj:getPlayerNum(),
-        wallet = PhunWallet:getPlayerData(playerObj:getUsername()).wallet or {}
+        wallet = PhunWallet:getPlayerData(playerObj:getUsername()).wallet or {},
+        currencies = self.currencies
     })
+end
+
+function PhunWallet:savePlayers()
+    if self.playersModified > self.playersSaved then
+        PhunTools:saveTable(self.name .. "_Players.lua", self.players)
+        self.playersSaved = getTimestamp()
+    end
 end
 
 local Commands = {}
 
 Commands[PhunWallet.commands.getWallet] = function(playerObj, args)
-    print("PhunWallet.commands.getWallet requested")
     local wallet = PhunWallet:getPlayerData(playerObj:getUsername()).wallet or {}
     local data = {
         playerIndex = playerObj:getPlayerNum(),
-        wallet = wallet
+        wallet = wallet,
+        currencies = PhunWallet.currencies
     }
-    PhunTools:printTable(data)
     sendServerCommand(playerObj, PhunWallet.name, PhunWallet.commands.getWallet, data)
 end
 
@@ -158,7 +143,7 @@ Events.OnCharacterDeath.Add(function(playerObj)
         local current = wallet.current or {}
         local bound = wallet.bound or {}
 
-        if sandbox.DropWalletOnDeath then
+        if sandbox.PhunWallet_DropWalletOnDeath then
             for k, v in pairs(wallet.current) do
                 local currency = PhunWallet.currencies[k]
                 -- skip bound entries
@@ -166,14 +151,14 @@ Events.OnCharacterDeath.Add(function(playerObj)
                     local rate = 100
                     if currency.returnRate then
                         rate = currency.returnRate
-                    elseif sandbox.DefaultReturnRate then
-                        rate = sandbox.DefaultReturnRate
+                    elseif sandbox.PhunWallet_DefaultReturnRate then
+                        rate = sandbox.PhunWallet_DefaultReturnRate
                     end
                     toAdd[k] = math.floor(v * (rate / 100))
                 end
             end
 
-            item:setName(playerObj:getDescriptor():getForename() .. "'s wallet")
+            item:setName(getText("IGUI_PhunWallet.CharactersWallet", playerObj:getDescriptor():getForename()))
             item:getModData().PhunWallet = {
                 owner = playerObj:getUsername(),
                 wallet = {
@@ -186,8 +171,6 @@ Events.OnCharacterDeath.Add(function(playerObj)
         for k, v in pairs(wallet.bound) do
             wallet.current[k] = v
         end
-
-        PhunTools:printTable(PhunWallet:getPlayerData(playerObj).wallet)
     end
 end)
 
@@ -209,4 +192,13 @@ end
 Events.OnFillContainer.Add(onContainerFill)
 Events.OnInitGlobalModData.Add(function()
     PhunWallet:ini()
+end)
+
+Events.EveryTenMinutes.Add(function()
+    PhunWallet:savePlayers()
+end)
+
+-- Add a hook to save player data when the server goes empty
+PhunTools:RunOnceWhenServerEmpties(PhunWallet.name, function()
+    PhunWallet:savePlayers()
 end)
