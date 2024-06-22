@@ -1,6 +1,21 @@
 version=1
 id=3270424171
 title=PhunWallet
-description=BoP Wallet and currency management
+description=Character and player bound wallets.
+description=
+description=beta testing! Currently play testing and balance tweaking on PhunZoid server
+description=[url=https://github.com/PhunZoider/PhunWallet]Repo and more info[/url]
+description=
+description=This mod allows server admins to specify one or more items to be a "currency". When picked up, Currency items are placed into a special wallet for the character instead of your inventory. This keeps currency locked to the character.
+description=
+description=If the player dies, their wallet will appear on their body (can be disabled) and can only be looted by the player (can be disabled)
+description=
+description=Player bound
+description=
+description=You can optionally mark currency items to be replenished on death. These currency items will be automatically reset when the player rolls a new character. We use this feature to allow members to earn and purchase bonus traits, so if they die, they can purchase the bonus traits again.
+description=
+description=Configuration
+description=
+description=The server admin will need to upload a PhunWallet_Currencies.lua file to their Lua folder on the server. An example of the file can be found in the [url=https://github.com/PhunZoider/PhunWallet/tree/main/ServerFiles/Lua]repo here[/url]
 tags=Build 41
 visibility=public
