@@ -3,7 +3,7 @@ id=3270424171
 title=PhunWallet
 description=Character and player bound wallets.
 description=
-description=beta testing! Currently play testing and balance tweaking on PhunZoid server
+description=beta testing! Currently play testing and balance tweaking on [url=https://discord.gg/v2USyAtP6q]PhunZoid Server[/url]
 description=[url=https://github.com/PhunZoider/PhunWallet]Repo and more info[/url]
 description=
 description=This mod allows server admins to specify one or more items to be a "currency". When picked up, Currency items are placed into a special wallet for the character instead of your inventory. This keeps currency locked to the character.

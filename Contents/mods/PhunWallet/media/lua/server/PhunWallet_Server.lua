@@ -143,7 +143,7 @@ Events.OnCharacterDeath.Add(function(playerObj)
         local current = wallet.current or {}
         local bound = wallet.bound or {}
 
-        if sandbox.PhunWallet_DropWalletOnDeath then
+        if sandbox.PhunWallet_DropWallet then
             for k, v in pairs(wallet.current) do
                 local currency = PhunWallet.currencies[k]
                 -- skip bound entries
@@ -158,13 +158,28 @@ Events.OnCharacterDeath.Add(function(playerObj)
                 end
             end
 
-            item:setName(getText("IGUI_PhunWallet.CharactersWallet", playerObj:getDescriptor():getForename()))
+            -- print("To add to wallet") 
+            -- PhunTools:printTable(toAdd)
+
+            -- item:setName(getText("ItemName_PhunWallet.CharsWallet", playerObj:getDescriptor():getForename()))
             item:getModData().PhunWallet = {
                 owner = playerObj:getUsername(),
                 wallet = {
                     current = toAdd
                 }
             }
+
+            PhunTools:printTable({
+                owner = playerObj:getUsername(),
+                wallet = {
+                    current = toAdd
+                }
+            })
+            -- item:transmitModData()
+            -- print("is")
+            -- PhunTools:printTable(item:getModData().PhunWallet or {})
+        else
+            print("WASNT SET FOR DROPPED WALLET")
         end
         wallet.current = {}
 

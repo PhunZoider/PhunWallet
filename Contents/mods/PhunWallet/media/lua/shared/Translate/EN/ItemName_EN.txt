@@ -1,3 +1,4 @@
 ItemName_EN = {
-    ItemName_PhunWallet.DroppedWallet = "Dropped Wallet"
+    ItemName_PhunWallet.DroppedWallet = "Dropped Wallet",
+    ItemName_PhunWallet.CharsWallet = "%1's Wallet",
 }
