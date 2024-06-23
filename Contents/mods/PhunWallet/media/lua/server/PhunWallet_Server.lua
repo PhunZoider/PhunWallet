@@ -95,7 +95,10 @@ end
 
 function PhunWallet:savePlayers()
     if self.playersModified > self.playersSaved then
-        PhunTools:saveTable(self.name .. "_Players.lua", self.players)
+        print("PhunWallet:savePlayers() - saving players")
+        PhunTools:saveTable(self.name .. "_Players.lua", {
+            data = self.players
+        })
         self.playersSaved = getTimestamp()
     end
 end
