@@ -48,6 +48,7 @@ function PhunWalletContents:new(x, y, width, height, viewer)
     o.filterWidgetMap = {}
     o.viewer = viewer
     o.playerObj = getSpecificPlayer(viewer)
+    o.itemsHeight = 200
     PhunWalletContents.instance = o;
     return o;
 end
@@ -103,11 +104,15 @@ function PhunWalletContents:prerender()
     ISPanel.prerender(self);
     local maxWidth = self.parent.width
     local maxHeight = self.parent.height
+    local minHeight = 250
     local sw = maxWidth
     self:setWidth(sw)
     self.datas:setWidth(sw - 20)
-    self.datas:setHeight(maxHeight)
+    self.datas:setHeight(math.max(minHeight, maxHeight))
 
+    local tabHeight = self.itemsHeight + HEADER_HGT + 20
+
+    self:setHeightAndParentHeight(math.max(self.height, tabHeight));
 end
 
 function PhunWalletContents:drawDatas(y, item, alt)
@@ -161,7 +166,8 @@ function PhunWalletContents:drawDatas(y, item, alt)
     local cw = self.columns[2].size
     self:drawText(value, w - valueWidth - 10, y + 4, 1, 1, 1, a, self.font);
 
-    return y + self.itemheight;
+    self.itemsHeight = y + self.itemheight;
+    return self.itemsHeight;
 end
 
 function PhunWalletContents:doTooltip()

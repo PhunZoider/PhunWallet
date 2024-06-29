@@ -7,6 +7,21 @@ local FONT_HGT_MEDIUM = getTextManager():getFontHeight(UIFont.Medium)
 local FONT_HGT_LARGE = getTextManager():getFontHeight(UIFont.Large)
 local FONT_SCALE = FONT_HGT_SMALL / 14
 
+local function moveEntry(tbl, fromIndex, toIndex)
+    -- Ensure the indices are within the valid range
+    if fromIndex < 1 or fromIndex > #tbl or toIndex < 1 or toIndex > #tbl then
+        return tbl -- Return the table unchanged if indices are out of range
+    end
+
+    -- Extract the entry
+    local entry = table.remove(tbl, fromIndex)
+
+    -- Insert the entry at the new position
+    table.insert(tbl, toIndex, entry)
+
+    return tbl
+end
+
 local function addCharacterPageTab(tabName, pageType)
     local viewName = tabName .. "View"
     local upperLayer_ISCharacterInfoWindow_createChildren = ISCharacterInfoWindow.createChildren
@@ -16,6 +31,7 @@ local function addCharacterPageTab(tabName, pageType)
         self[viewName]:initialise()
         self[viewName].infoText = getText("UI_" .. tabName .. "Panel");
         self.panel:addView(getText("UI_PhunWalletWallet"), self[viewName])
+        moveEntry(self.panel.viewList, #self.panel.viewList, 4)
     end
 
     local upperLayer_ISCharacterInfoWindow_onTabTornOff = ISCharacterInfoWindow.onTabTornOff
