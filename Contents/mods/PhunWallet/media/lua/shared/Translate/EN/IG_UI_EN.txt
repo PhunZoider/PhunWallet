@@ -5,6 +5,6 @@ IGUI_EN = {
     IGUI_PhunWallet.SavingsDesc = "Each time you spawn a new character, any savings will replenish your balance",
     IGUI_PhunWallet.Empty = "This is rather Empty",
     IGUI_PhunWallet.BalanceReplenishedOnDeath = "If you die, your next character will start with %1",
-    IGUI_PhunWallet.CharactersWallet = "%1's wallet",
+    IGUI_PhunWallet.CharsWallet = "%1's wallet",
 
 }

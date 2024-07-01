@@ -96,19 +96,8 @@ function ISInventoryTransferAction:new(player, item, srcContainer, destContainer
         if itemType == "PhunWallet.DroppedWallet" then
             wallet = item:getModData().PhunWallet
             if wallet then
-                if wallet.wallet then
-                    print("WALLET IS OWNED BY " .. wallet.owner .. " AND IS " .. player:getUsername() ..
-                              " IS PICKING IT UP")
-                end
                 if wallet.wallet and
                     (not sandbox.PhunWallet_OnlyPickupOwnWallet or player:getUsername() == wallet.owner) then
-                    -- for k, v in pairs(wallet.wallet.current or {}) do
-                    --     queue:add(player, k, v)
-                    --     queue:process()
-                    -- end
-                    -- srcContainer:removeItemOnServer(item)
-                    -- srcContainer:DoRemoveItem(item)
-                    -- getSoundManager():PlaySound("PhunWallet_Pickup", false, 0):setVolume(0.50);
                 elseif wallet.wallet and sandbox.PhunWallet_OnlyPickupOwnWallet and player:getUsername() ~= wallet.owner then
                     return {
                         ignoreAction = true
@@ -289,6 +278,43 @@ Commands[PhunWallet.commands.getWallet] = function(arguments)
     PhunWallet.players[player:getUsername()].wallet = arguments.wallet
     triggerEvent(PhunWallet.events.OnPhunWalletChanged, arguments.wallet)
 end
+
+Events.OnCharacterDeath.Add(function(playerObj)
+
+    if instanceof(playerObj, "IsoPlayer") and playerObj:isLocalPlayer() then
+        local wallet = PhunWallet:getPlayerData(playerObj).wallet
+        local item = playerObj:getInventory():AddItem("PhunWallet.DroppedWallet")
+
+        local toAdd = {}
+        local current = wallet.current or {}
+        local bound = wallet.bound or {}
+
+        if sandbox.PhunWallet_DropWallet then
+            for k, v in pairs(wallet.current) do
+                local currency = PhunWallet.currencies[k]
+                -- skip bound entries
+                if not currency.boa then
+                    local rate = 100
+                    if currency.returnRate then
+                        rate = currency.returnRate
+                    elseif sandbox.PhunWallet_DefaultReturnRate then
+                        rate = sandbox.PhunWallet_DefaultReturnRate
+                    end
+                    toAdd[k] = math.floor(v * (rate / 100))
+                end
+            end
+
+            item:setName(getText("IGUI_PhunWallet.CharsWallet", playerObj:getUsername()))
+            item:getModData().PhunWallet = {
+                owner = playerObj:getUsername(),
+                wallet = {
+                    current = toAdd
+                }
+            }
+        end
+
+    end
+end)
 
 Events[PhunWallet.events.OnPhunWalletChanged].Add(function(data)
     if PhunWalletContents.instance then

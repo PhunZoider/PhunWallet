@@ -49,6 +49,10 @@ function PhunWalletContents:new(x, y, width, height, viewer)
     o.viewer = viewer
     o.playerObj = getSpecificPlayer(viewer)
     o.itemsHeight = 200
+    o.wallet = {
+        current = {},
+        bound = {}
+    } -- default wallet
     PhunWalletContents.instance = o;
     return o;
 end
@@ -56,7 +60,7 @@ end
 function PhunWalletContents:createChildren()
     ISPanel.createChildren(self);
 
-    self.datas = ISScrollingListBox:new(0, HEADER_HGT, self.width, self.height - HEADER_HGT);
+    self.datas = ISScrollingListBox:new(0, HEADER_HGT + 20, self.width, self.height - HEADER_HGT);
     self.datas:initialise();
     self.datas:instantiate();
     self.datas.itemheight = FONT_HGT_MEDIUM + 4 * 2
@@ -84,6 +88,16 @@ function PhunWalletContents:createChildren()
     self.tooltip.description = "";
     self.tooltip:setOwner(self.tabPanel)
 
+    self.adminButton = ISButton:new(0, 0, 100, 20, "Admin", self, function()
+        if isAdmin() then
+            PhunWalletAdminUI.OnOpenPanel()
+        end
+    end);
+    self.adminButton:initialise();
+    self.adminButton:instantiate();
+    self:addChild(self.adminButton);
+    self.adminButton:setVisible(isAdmin())
+
 end
 
 function PhunWalletContents:rebuild()
@@ -96,8 +110,8 @@ function PhunWalletContents:rebuild()
         end
         self.datas:addItem(k, v)
         self.datas:setVisible(true)
-        self.holding:setVisible(false)
     end
+    self.holding:setVisible(false)
 end
 
 function PhunWalletContents:prerender()
@@ -113,6 +127,8 @@ function PhunWalletContents:prerender()
     local tabHeight = self.itemsHeight + HEADER_HGT + 20
 
     self:setHeightAndParentHeight(math.max(self.height, tabHeight));
+
+    self.adminButton:setVisible(isAdmin())
 end
 
 function PhunWalletContents:drawDatas(y, item, alt)

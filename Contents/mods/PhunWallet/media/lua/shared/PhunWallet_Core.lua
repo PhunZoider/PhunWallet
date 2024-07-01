@@ -7,7 +7,10 @@ PhunWallet = {
         requestData = "requestData",
         getWallet = "getWallet",
         getCurrencies = "getCurrencies",
-        addToWallet = "addToWallet"
+        addToWallet = "addToWallet",
+        getPlayerList = "getPlayerList",
+        getPlayersWallet = "getPlayersWallet",
+        adjustPlayerWallet = "adjustPlayerWallet"
     },
     ticks = 100,
     playersModified = 0,
@@ -131,21 +134,7 @@ function PhunWallet:ini()
     if not self.inied then
         self.inied = true
         if isServer() then
-            -- self.currencies = ModData.getOrCreate("PhunWallet_Currencies")
             self.players = ModData.getOrCreate("PhunWallet_Players")
-
-            -- PhunTools:printTable(self.players)
-            -- local data = PhunTools:loadTable("PhunWallet_Players.lua") or {}
-            -- print("Loading players")
-            -- for _, v in ipairs(data) do
-            --     for k, vv in pairs(v) do
-            --         self.players[k] = vv
-            --     end
-            -- end
-            -- PhunTools:printTable(data)
-            -- self.players = data or {}
-            -- print("PhunWallet:ini() - players loaded")
-            -- PhunTools:printTable(self.players)
             self:reload()
         end
 

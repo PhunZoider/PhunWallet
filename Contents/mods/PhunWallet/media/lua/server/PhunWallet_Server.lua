@@ -93,6 +93,45 @@ function PhunWallet:adjustWallet(playerObj, values, doNotAddBound)
     })
 end
 
+function PhunWallet:adjustPlayerWallet(playerName, walletType, currency, value, note)
+    if self.currencies[currency] then
+        local data = PhunWallet:getPlayerData(playerName)
+        local target = data.wallet[walletType or "current"]
+        if not target then
+            print("PhunWallet:adjustPlayerWallet() - walletType " .. tostring(walletType) .. " not found")
+            return false
+        end
+
+        value = tonumber(value) or 0
+        if (target[currency] + value) < 0 then
+            return false
+        end
+        PhunTools:addLogEntry(tostring(note or "PhunWallet:adjustPlayerWallet"), playerName, k, v)
+        if target[currency] then
+            target[currency] = target[currency] + value
+        else
+            target[currency] = value
+        end
+
+        self.playersModified = getTimestamp()
+
+        for i = 1, getOnlinePlayers():size() do
+            local p = getOnlinePlayers():get(i - 1)
+            if p:getUsername() == playerName then
+                sendServerCommand(p, PhunWallet.name, PhunWallet.commands.getWallet, {
+                    playerIndex = p:getPlayerNum(),
+                    wallet = PhunWallet:getPlayerData(p:getUsername()).wallet or {},
+                    currencies = self.currencies
+                })
+            end
+        end
+
+    else
+        print("PhunWallet:adjustPlayerWallet() - currency " .. tostring(currency) .. " not found")
+        return false
+    end
+end
+
 function PhunWallet:savePlayers()
     if self.playersModified > self.playersSaved then
         print("PhunWallet:savePlayers() - saving players")
@@ -104,6 +143,35 @@ function PhunWallet:savePlayers()
 end
 
 local Commands = {}
+
+Commands[PhunWallet.commands.getPlayerList] = function(playerObj, args)
+
+    local players = {}
+    for k, v in pairs(PhunWallet.players) do
+        table.insert(players, k)
+    end
+
+    table.sort(players, function(a, b)
+        return a < b
+    end)
+    local data = {
+        playerIndex = playerObj:getPlayerNum(),
+        players = players
+    }
+    sendServerCommand(playerObj, PhunWallet.name, PhunWallet.commands.getPlayerList, data)
+end
+
+Commands[PhunWallet.commands.getPlayersWallet] = function(playerObj, args)
+
+    local data = {
+        playerIndex = playerObj:getPlayerNum(),
+        wallet = (PhunWallet.players[args.player] or {}).wallet or {
+            current = {},
+            bound = {}
+        }
+    }
+    sendServerCommand(playerObj, PhunWallet.name, PhunWallet.commands.getPlayersWallet, data)
+end
 
 Commands[PhunWallet.commands.getWallet] = function(playerObj, args)
     local wallet = PhunWallet:getPlayerData(playerObj:getUsername()).wallet or {}
@@ -131,6 +199,27 @@ Commands[PhunWallet.commands.addToWallet] = function(playerObj, args)
     sendServerCommand(playerObj, PhunWallet.name, PhunWallet.commands.addToWallet, args)
 end
 
+Commands[PhunWallet.commands.adjustPlayerWallet] = function(playerObj, args)
+    if not args.player then
+        return
+    end
+    local data = PhunWallet:getPlayerData(args.player)
+    if not data then
+        return
+    end
+
+    PhunWallet:adjustPlayerWallet(args.player, args.walletType, args.currencyType, args.value, args.note)
+
+    local data = {
+        playerIndex = playerObj:getPlayerNum(),
+        wallet = (PhunWallet.players[args.player] or {}).wallet or {
+            current = {},
+            bound = {}
+        }
+    }
+    sendServerCommand(playerObj, PhunWallet.name, PhunWallet.commands.getPlayersWallet, data)
+end
+
 Events.OnClientCommand.Add(function(module, command, playerObj, arguments)
     if module == PhunWallet.name and Commands[command] then
         Commands[command](playerObj, arguments)
@@ -140,50 +229,6 @@ end)
 Events.OnCharacterDeath.Add(function(playerObj)
     if instanceof(playerObj, "IsoPlayer") then
         local wallet = PhunWallet:getPlayerData(playerObj).wallet
-        local item = playerObj:getInventory():AddItem("PhunWallet.DroppedWallet")
-
-        local toAdd = {}
-        local current = wallet.current or {}
-        local bound = wallet.bound or {}
-
-        if sandbox.PhunWallet_DropWallet then
-            for k, v in pairs(wallet.current) do
-                local currency = PhunWallet.currencies[k]
-                -- skip bound entries
-                if not currency.boa then
-                    local rate = 100
-                    if currency.returnRate then
-                        rate = currency.returnRate
-                    elseif sandbox.PhunWallet_DefaultReturnRate then
-                        rate = sandbox.PhunWallet_DefaultReturnRate
-                    end
-                    toAdd[k] = math.floor(v * (rate / 100))
-                end
-            end
-
-            -- print("To add to wallet") 
-            -- PhunTools:printTable(toAdd)
-
-            -- item:setName(getText("ItemName_PhunWallet.CharsWallet", playerObj:getDescriptor():getForename()))
-            item:getModData().PhunWallet = {
-                owner = playerObj:getUsername(),
-                wallet = {
-                    current = toAdd
-                }
-            }
-
-            PhunTools:printTable({
-                owner = playerObj:getUsername(),
-                wallet = {
-                    current = toAdd
-                }
-            })
-            -- item:transmitModData()
-            -- print("is")
-            -- PhunTools:printTable(item:getModData().PhunWallet or {})
-        else
-            print("WASNT SET FOR DROPPED WALLET")
-        end
         wallet.current = {}
 
         for k, v in pairs(wallet.bound) do
