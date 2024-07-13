@@ -283,13 +283,13 @@ Events.OnCharacterDeath.Add(function(playerObj)
 
     if instanceof(playerObj, "IsoPlayer") and playerObj:isLocalPlayer() then
         local wallet = PhunWallet:getPlayerData(playerObj).wallet
-        local item = playerObj:getInventory():AddItem("PhunWallet.DroppedWallet")
 
         local toAdd = {}
         local current = wallet.current or {}
         local bound = wallet.bound or {}
 
         if sandbox.PhunWallet_DropWallet then
+            local doAdd = false
             for k, v in pairs(wallet.current) do
                 local currency = PhunWallet.currencies[k]
                 -- skip bound entries
@@ -301,16 +301,29 @@ Events.OnCharacterDeath.Add(function(playerObj)
                         rate = sandbox.PhunWallet_DefaultReturnRate
                     end
                     toAdd[k] = math.floor(v * (rate / 100))
+                    if toAdd[k] > 0 then
+                        doAdd = true
+                    end
+                    -- log the full reduction on server
+                    sendClientCommand(playerObj, PhunWallet.name, PhunWallet.commands.logPlayerDroppedWallet, {
+                        currency = k,
+                        value = -v,
+                        note = "Death"
+                    })
                 end
             end
 
-            item:setName(getText("IGUI_PhunWallet.CharsWallet", playerObj:getUsername()))
-            item:getModData().PhunWallet = {
-                owner = playerObj:getUsername(),
-                wallet = {
-                    current = toAdd
+            if doAdd then
+                local item = playerObj:getInventory():AddItem("PhunWallet.DroppedWallet")
+                item:setName(getText("IGUI_PhunWallet.CharsWallet", playerObj:getUsername()))
+                item:getModData().PhunWallet = {
+                    owner = playerObj:getUsername(),
+                    wallet = {
+                        current = toAdd
+                    }
                 }
-            }
+                -- log these as death reductions!
+            end
         end
 
     end

@@ -10,7 +10,8 @@ PhunWallet = {
         addToWallet = "addToWallet",
         getPlayerList = "getPlayerList",
         getPlayersWallet = "getPlayersWallet",
-        adjustPlayerWallet = "adjustPlayerWallet"
+        adjustPlayerWallet = "adjustPlayerWallet",
+        logPlayerDroppedWallet = "logPlayerDroppedWallet"
     },
     ticks = 100,
     playersModified = 0,

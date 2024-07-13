@@ -106,7 +106,7 @@ function PhunWallet:adjustPlayerWallet(playerName, walletType, currency, value, 
         if (target[currency] + value) < 0 then
             return false
         end
-        PhunTools:addLogEntry(tostring(note or "PhunWallet:adjustPlayerWallet"), playerName, k, v)
+        PhunTools:addLogEntry(tostring(note or "PhunWallet:adjustPlayerWallet"), playerName, currency, value)
         if target[currency] then
             target[currency] = target[currency] + value
         else
@@ -185,6 +185,10 @@ end
 
 Commands[PhunWallet.commands.getCurrencies] = function(playerObj, args)
     -- sendServerCommand(playerObj, PhunWallet.name, PhunWallet.commands.getCurrencies, PhunWallet.currencies)
+end
+
+Commands[PhunWallet.commands.logPlayerDroppedWallet] = function(playerObj, args)
+    PhunTools:addLogEntry(args.note or "Dropped Wallet", playerObj:getUsername(), args.currency, args.value)
 end
 
 Commands[PhunWallet.commands.addToWallet] = function(playerObj, args)

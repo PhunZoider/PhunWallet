@@ -33,6 +33,9 @@ end
 
 function PhunWalletAdminUI:setPlayers(players)
     self.box:clear()
+    table.sort(players, function(a, b)
+        return a < b
+    end)
     for _, player in ipairs(players) do
         self.box:addOption(player)
     end
