@@ -1,7 +1,7 @@
 if isServer() then
     return
 end
-require 'ISInventoryTransferAction'
+require "TimedActions/ISInventoryTransferAction"
 local PhunWallet = PhunWallet
 local sandbox = SandboxVars.PhunWallet
 local Commands = {}
