@@ -103,7 +103,7 @@ function PhunWallet:adjustPlayerWallet(playerName, walletType, currency, value, 
         end
 
         value = tonumber(value) or 0
-        if (target[currency] + value) < 0 then
+        if ((target[currency] or 0) + value) < 0 then
             return false
         end
         PhunTools:addLogEntry(tostring(note or "PhunWallet:adjustPlayerWallet"), playerName, currency, value)

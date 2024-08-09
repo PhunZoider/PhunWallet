@@ -80,9 +80,13 @@ function PhunWallet:processCurrencyLabelHook(key)
     end
 end
 
-function PhunWallet:processPrePurchaseHook(playerObj, key, value)
+function PhunWallet:processPrePurchaseHook(playerObj, sourceType, key, value)
     -- mutate value, but don't actually change the wallet value
     -- this is used to ensure the player has enough currency to make a purchase
+    if sourceType ~= "PhunWallet" then
+        return
+    end
+
     if value and playerObj then
         local wallet = self:getPlayerData(playerObj).wallet or {}
         local current = wallet.current or {}
@@ -96,7 +100,10 @@ function PhunWallet:processPrePurchaseHook(playerObj, key, value)
     end
 end
 
-function PhunWallet:processPurchaseHook(playerObj, key, value)
+function PhunWallet:processPurchaseHook(playerObj, sourceType, key, value)
+    if sourceType ~= "PhunWallet" then
+        return
+    end
     -- mutate value AND change the wallet value
     if value and playerObj then
         local wallet = self:getPlayerData(playerObj).wallet or {}
@@ -113,18 +120,32 @@ function PhunWallet:processPurchaseHook(playerObj, key, value)
     end
 end
 
-function PhunWallet:satisfyPriceHook(playerObj, item, satisfied)
+function PhunWallet:satisfyPriceHook(playerObj, item, satisfied, allocation)
     if satisfied and playerObj and playerObj then
 
         local wallet = self:getPlayerData(playerObj).wallet or {}
         local current = wallet.current or {}
 
         for k, v in pairs(satisfied) do
-            if current[k] and v.value > 0 then
-                if current[k] > v.value then
-                    v.value = 0
-                else
-                    v.value = v.value - current[k]
+            if v.value > 0 then
+                for _, cur in ipairs(v.currencies) do
+                    if current[cur.key] then
+                        if current[cur.key] > v.value then
+                            table.insert(allocation, {
+                                currency = cur.key,
+                                type = "PhunWallet",
+                                value = v.value
+                            })
+                            v.value = 0
+                        else
+                            table.insert(allocation, {
+                                currency = cur.key,
+                                type = "PhunWallet",
+                                value = v.value - current[cur.key]
+                            })
+                            v.value = v.value - current[cur.key]
+                        end
+                    end
                 end
             end
         end
@@ -145,16 +166,16 @@ function PhunWallet:ini()
                 return self:processCurrencyLabelHook(key)
             end)
 
-            PhunMart:addHook("preSatisfyPrice", function(playerObj, item, satisfied)
-                self:satisfyPriceHook(playerObj, item, satisfied)
+            PhunMart:addHook("preSatisfyPrice", function(playerObj, item, satisfied, allocation)
+                self:satisfyPriceHook(playerObj, item, satisfied, allocation)
             end)
 
-            PhunMart:addHook("prePurchase", function(playerObj, key, value)
+            PhunMart:addHook("prePurchase", function(playerObj, type, key, value)
                 self:processPrePurchaseHook(playerObj, key, value)
             end)
 
-            PhunMart:addHook("purchase", function(playerObj, key, value)
-                self:processPurchaseHook(playerObj, key, value)
+            PhunMart:addHook("purchase", function(playerObj, type, key, value)
+                self:processPurchaseHook(playerObj, type, key, value)
             end)
         end
 

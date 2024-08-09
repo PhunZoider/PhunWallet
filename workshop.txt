@@ -1,6 +1,6 @@
 version=1
-id=3270424171
-title=PhunWallet
+id=3305707413
+title=PhunWallet2
 description=Character and player bound wallets.
 description=
 description=beta testing! Currently play testing and balance tweaking on [url=https://discord.gg/v2USyAtP6q]PhunZoid Server[/url]
