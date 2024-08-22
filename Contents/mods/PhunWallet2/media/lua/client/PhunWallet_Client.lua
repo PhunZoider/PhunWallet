@@ -233,7 +233,7 @@ local function CheckZedSpecialDrops(zombie)
             zombie:getInventory():Remove(v.type)
         end
     end
-    zombie:getModData().PhunRunners = nil
+    -- zombie:getModData().PhunRunners = nil
 end
 
 Events.OnZombieDead.Add(CheckZedSpecialDrops);
