@@ -107,45 +107,6 @@ function ISInventoryTransferAction:new(player, item, srcContainer, destContainer
         end
     end
 
-    -- if phun.currencies[itemType] then
-    --     if not cachedBindInventoryItems then
-    --         cachedBindInventoryItems = {}
-    --         for _, v in pairs(PhunWallet.currencies) do
-    --             cachedBindInventoryItems[v.type] = v
-    --         end
-    --     end
-
-    --     local srcType = srcContainer:getType()
-    --     local destType = destContainer:getType()
-
-    --     if destType ~= "floor" and cachedBindInventoryItems[itemType] then
-    --         queue:add(player, itemType)
-
-    --         -- if srcType == "floor" and item:getWorldItem() then
-    --         --     local worldItem = item:getWorldItem()
-    --         --     if worldItem then
-    --         --         local square = worldItem:getSquare()
-    --         --         if square then
-    --         --             square:transmitRemoveItemFromSquare(worldItem)
-    --         --             square:getChunk():recalcHashCodeObjects();
-    --         --             square:getObjects():remove(worldItem);
-    --         --             item:setWorldItem(nil);
-    --         --         end
-    --         --     end
-    --         -- end
-    --         -- if srcType ~= "floor" and srcType ~= "none" then
-    --         --     srcContainer:removeItemOnServer(item)
-    --         -- end
-    --         -- srcContainer:DoRemoveItem(item)
-    --         -- --triggerEvent("OnRefreshInventoryWindowContainers", srcContainer, "begin")
-    --         -- return {
-    --         --     ignoreAction = true
-    --         -- }
-    --     end
-    -- end
-
-    -- otherwise, just do the transfer by passing parms back to original method
-
     local action = originalNewInventoryTransaferAction(self, player, item, srcContainer, destContainer, time)
 
     if wallet and wallet.wallet then
@@ -154,9 +115,6 @@ function ISInventoryTransferAction:new(player, item, srcContainer, destContainer
                 queue:add(player, k, v, true)
                 queue:process()
             end
-            -- destContainer:DoRemoveItem(item)
-            -- srcContainer:DoRemoveItem(item)
-            -- getSoundManager():PlaySound("PhunWallet_Pickup", false, 0):setVolume(0.50);
         end)
     elseif phun.currencies[itemType] then
         action:setOnComplete(function()
@@ -177,52 +135,6 @@ function ISInventoryTransferAction:new(player, item, srcContainer, destContainer
         end)
     end
 
-    -- if phun.currencies[itemType] then
-
-    --     action:setOnComplete(function(a, b, c, d, e)
-
-    --         if phun.currencies[itemType] then
-
-    --             if not cachedBindInventoryItems then
-    --                 cachedBindInventoryItems = {}
-    --                 for _, v in pairs(PhunWallet.currencies) do
-    --                     cachedBindInventoryItems[v.type] = v
-    --                 end
-    --             end
-
-    --             local srcType = srcContainer:getType()
-    --             local destType = destContainer:getType()
-
-    --             if destType ~= "floor" and cachedBindInventoryItems[itemType] then
-    --                 queue:add(player, itemType)
-
-    --                 if srcType == "floor" and item:getWorldItem() then
-    --                     local worldItem = item:getWorldItem()
-    --                     if worldItem then
-    --                         local square = worldItem:getSquare()
-    --                         if square then
-    --                             square:transmitRemoveItemFromSquare(worldItem)
-    --                             square:getChunk():recalcHashCodeObjects();
-    --                             square:getObjects():remove(worldItem);
-    --                             item:setWorldItem(nil);
-    --                         end
-    --                     end
-    --                 end
-    --                 if srcType ~= "floor" and srcType ~= "none" then
-    --                     srcContainer:removeItemOnServer(item)
-    --                 end
-    --                 srcContainer:DoRemoveItem(item)
-
-    --                 return {
-    --                     ignoreAction = true
-    --                 }
-    --             end
-    --         end
-
-    --     end, "A1", "B2", "C3", "D4", "E5")
-
-    -- end
-
     return action
 end
 
@@ -233,20 +145,9 @@ local function CheckZedSpecialDrops(zombie)
             zombie:getInventory():Remove(v.type)
         end
     end
-    -- zombie:getModData().PhunRunners = nil
 end
 
 Events.OnZombieDead.Add(CheckZedSpecialDrops);
-
--- local function setup()
---     Events.EveryOneMinute.Remove(setup)
---     for i = 1, getOnlinePlayers():size() do
---         local p = getOnlinePlayers():get(i - 1)
---         sendClientCommand(p, PhunWallet.name, PhunWallet.commands.getWallet, {})
---     end
--- end
-
--- Events.EveryOneMinute.Add(setup)
 
 Events.OnServerCommand.Add(function(module, command, arguments)
     if module == PhunWallet.name and Commands[command] then
