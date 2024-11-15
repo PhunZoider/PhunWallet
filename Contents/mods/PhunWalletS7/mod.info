@@ -1,7 +1,7 @@
-title=PhunWallet2
-name=PhunWallet2
-id=PhunWallet2
+title=PhunWalletS7
+name=PhunWalletS7
+id=PhunWalletS7
 authors=UburGeek
 description=BoP Wallet and currency management
 poster=poster.png
-require=PhunTools
+require=PhunToolsS7

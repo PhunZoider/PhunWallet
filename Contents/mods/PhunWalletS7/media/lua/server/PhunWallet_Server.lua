@@ -98,7 +98,7 @@ function PhunWallet:adjustPlayerWallet(playerName, walletType, currency, value, 
         local data = PhunWallet:getPlayerData(playerName)
         local target = data.wallet[walletType or "current"]
         if not target then
-            print("PhunWallet:adjustPlayerWallet() - walletType " .. tostring(walletType) .. " not found")
+            --print("PhunWallet:adjustPlayerWallet() - walletType " .. tostring(walletType) .. " not found")
             return false
         end
 
@@ -127,14 +127,14 @@ function PhunWallet:adjustPlayerWallet(playerName, walletType, currency, value, 
         end
 
     else
-        print("PhunWallet:adjustPlayerWallet() - currency " .. tostring(currency) .. " not found")
+        --print("PhunWallet:adjustPlayerWallet() - currency " .. tostring(currency) .. " not found")
         return false
     end
 end
 
 function PhunWallet:savePlayers()
     if self.playersModified > self.playersSaved then
-        print("PhunWallet:savePlayers() - saving players")
+        --print("PhunWallet:savePlayers() - saving players")
         PhunTools:saveTable(self.name .. "_Players.lua", {
             data = self.players
         })
