@@ -92,7 +92,7 @@ function ISInventoryTransferAction:new(player, item, srcContainer, destContainer
     local phun = PhunWallet
     local wallet = nil
 
-    if instanceof(srcContainer:getParent(), "IsoDeadBody") then
+    if srcContainer and instanceof(srcContainer:getParent(), "IsoDeadBody") then
         if itemType == "PhunWallet.DroppedWallet" then
             wallet = item:getModData().PhunWallet
             if wallet then
