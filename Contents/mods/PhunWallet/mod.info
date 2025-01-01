@@ -1,7 +1,7 @@
-title=PhunWalletS7
-name=PhunWalletS7
-id=PhunWalletS7
+title=PhunWallet
+name=PhunWallet
+id=phunwallet
 authors=UburGeek
 description=BoP Wallet and currency management
+require=phunmart
 poster=poster.png
-require=PhunToolsS7

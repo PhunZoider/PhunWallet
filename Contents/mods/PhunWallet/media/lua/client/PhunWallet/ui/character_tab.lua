@@ -1,22 +1,31 @@
-if not isClient() then
+if isServer() then
     return
 end
-
 require "ISUI/ISPanel"
-PhunWalletContents = ISPanel:derive("PhunWalletContents");
-local PhunWallet = PhunWallet
+local PW = PhunWallet
 
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 local FONT_HGT_MEDIUM = getTextManager():getFontHeight(UIFont.Medium)
 local FONT_HGT_LARGE = getTextManager():getFontHeight(UIFont.Large)
-
+local FONT_SCALE = FONT_HGT_SMALL / 14
 local HEADER_HGT = FONT_HGT_MEDIUM + 2 * 2
 
-function PhunWalletContents:initialise()
-    ISPanel.initialise(self);
+local windowName = "PhunWalletUI"
+
+PhunWalletUI = ISPanel:derive(windowName);
+local UI = PhunWalletUI
+
+local function formatWholeNumber(number)
+    number = number or 0
+    -- Round the number to remove the decimal part
+    local roundedNumber = math.floor(number + 0.5)
+    -- Convert to string and format with commas
+    local formattedNumber = tostring(roundedNumber):reverse():gsub("(%d%d%d)", "%1,")
+    formattedNumber = formattedNumber:reverse():gsub("^,", "")
+    return formattedNumber
 end
 
-function PhunWalletContents:new(x, y, width, height, viewer)
+function UI:new(x, y, width, height, player)
     local o = ISPanel:new(x, y, width, height);
     setmetatable(o, self);
     o.listHeaderColor = {
@@ -46,24 +55,35 @@ function PhunWalletContents:new(x, y, width, height, viewer)
     o.totalResult = 0;
     o.filterWidgets = {};
     o.filterWidgetMap = {}
-    o.viewer = viewer
-    o.playerObj = getSpecificPlayer(viewer)
     o.itemsHeight = 200
-    o.wallet = {
-        current = {},
-        bound = {}
-    } -- default wallet
-    PhunWalletContents.instance = o;
+    o.player = getSpecificPlayer(player)
+    o.playerName = o.player:getUsername()
+    o.data = PW:getPlayerData(o.player)
+    o.currencies = PW.currencies
+    UI.instance = o;
+
     return o;
 end
 
-function PhunWalletContents:createChildren()
-    ISPanel.createChildren(self);
+function UI:refreshData()
+    self.datas:clear();
+    local currentCatagories = {}
+    for k, v in pairs(PW.currencies or {}) do
+        local item = getScriptManager():getItem(v.type)
+        if item then
+            v.label = item:getDisplayName() or k
+            v.texture = item:getNormalTexture()
+        end
+        self.datas:addItem(k, v)
+    end
+end
 
-    self.datas = ISScrollingListBox:new(0, HEADER_HGT + 20, self.width, self.height - HEADER_HGT);
+function UI:createChildren()
+    ISPanel.createChildren(self);
+    self.datas = ISScrollingListBox:new(0, HEADER_HGT, self.width, self.height - HEADER_HGT);
     self.datas:initialise();
     self.datas:instantiate();
-    self.datas.itemheight = FONT_HGT_MEDIUM + 4 * 2
+    self.datas.itemheight = FONT_HGT_SMALL + 4 * 2
     self.datas.selected = 0;
     self.datas.joypadParent = self;
     self.datas.font = UIFont.NewSmall;
@@ -71,67 +91,33 @@ function PhunWalletContents:createChildren()
     self.datas.drawBorder = true;
     self.datas:addColumn("Currency", 0);
     self.datas:addColumn("Value", 200);
-    self.datas:setVisible(false);
-    self.datas.onMouseMove = self.doOnMouseMove
-    self.datas.onMouseMoveOutside = self.doOnMouseMoveOutside
+
     self:addChild(self.datas);
-
-    self.holding = ISLabel:new(50, 50, FONT_HGT_MEDIUM, "Loading...", 1, 1, 1, 1, UIFont.Medium, true);
-    self.holding:initialise();
-    self.holding:instantiate();
-    self:addChild(self.holding);
-
-    self.tooltip = ISToolTip:new();
-    self.tooltip:initialise();
-    self.tooltip:setVisible(false);
-    self.tooltip:setAlwaysOnTop(true)
-    self.tooltip.description = "";
-    self.tooltip:setOwner(self.tabPanel)
-
-    self.adminButton = ISButton:new(0, 0, 100, 20, "Admin", self, function()
-        if isAdmin() then
-            PhunWalletAdminUI.OnOpenPanel()
-        end
-    end);
-    self.adminButton:initialise();
-    self.adminButton:instantiate();
-    self:addChild(self.adminButton);
-    self.adminButton:setVisible(isAdmin())
-
+    self:refreshData()
 end
 
-function PhunWalletContents:rebuild()
-    self.datas:clear();
-    for k, v in pairs(PhunWallet.currencies or {}) do
-        local item = getScriptManager():getItem(v.type)
-        if item then
-            v.label = item:getDisplayName()
-            v.texture = item:getNormalTexture()
-        end
-        self.datas:addItem(k, v)
-        self.datas:setVisible(true)
-    end
-    self.holding:setVisible(false)
-end
+function UI:prerender()
 
-function PhunWalletContents:prerender()
     ISPanel.prerender(self);
+
     local maxWidth = self.parent.width
     local maxHeight = self.parent.height
+
     local minHeight = 250
     local sw = maxWidth
+    local tabY = self.parent.tabHeight
     self:setWidth(sw)
-    self.datas:setWidth(sw - 20)
-    self.datas:setHeight(math.max(minHeight, maxHeight))
-
-    local tabHeight = self.itemsHeight + HEADER_HGT + 20
-
-    self:setHeightAndParentHeight(math.max(self.height, tabHeight));
-
-    self.adminButton:setVisible(isAdmin())
+    self.datas:setX(10)
+    self.datas:setWidth(self.parent.width - 20)
+    self.datas:setY(tabY + 10)
+    local height = maxHeight - (tabY + 20) - self.datas.itemheight
+    if height > maxHeight then
+        height = maxHeight
+    end
+    self.datas:setHeight(height)
 end
 
-function PhunWalletContents:drawDatas(y, item, alt)
+function UI:drawDatas(y, item, alt)
 
     if y + self:getYScroll() + self.itemheight < 0 or y + self:getYScroll() >= self.height then
         return y + self.itemheight
@@ -160,6 +146,10 @@ function PhunWalletContents:drawDatas(y, item, alt)
     local clipY2 = math.min(self.height, y + self:getYScroll() + self.itemheight)
 
     self:setStencilRect(clipX, clipY, clipX2 - clipX, clipY2 - clipY)
+
+    local wallet = PW:getPlayerData(self.parent.playerName).wallet
+    local value = tostring(wallet.current[item.item.type] or 0)
+
     if item.item.texture then
         local boa = " *"
         if not item.item.boa then
@@ -171,22 +161,15 @@ function PhunWalletContents:drawDatas(y, item, alt)
     self:drawText(item.item.label, xoffset, y + 4, 1, 1, 1, a, self.font);
     self:clearStencilRect()
 
-    local viewer = self.parent.playerObj
-    local wallet = PhunWallet:getPlayerData(viewer).wallet or {
-        current = {},
-        bound = {}
-    }
-    local value = PhunTools:formatWholeNumber(wallet.current[item.item.key] or 0)
     local valueWidth = getTextManager():MeasureStringX(self.font, value)
     local w = self.width
     local cw = self.columns[2].size
-    self:drawText(value, w - valueWidth - 10, y + 4, 1, 1, 1, a, self.font);
-
+    self:drawText(value, w - valueWidth - xoffset - 4, y + 4, 1, 1, 1, a, self.font);
     self.itemsHeight = y + self.itemheight;
     return self.itemsHeight;
 end
 
-function PhunWalletContents:doTooltip()
+function UI:doTooltip()
     local rectWidth = 10;
 
     local title = "Hello";
@@ -203,12 +186,12 @@ function PhunWalletContents:doTooltip()
     self:drawText(description or "???", x + 2, y + 100 + (heightPadding * 2), 1, 1, 1, 0.7);
 end
 
-function PhunWalletContents:doOnMouseMoveOutside(dx, dy)
+function UI:doOnMouseMoveOutside(dx, dy)
     local tooltip = self.parent.tooltip
     tooltip:setVisible(false)
     tooltip:removeFromUIManager()
 end
-function PhunWalletContents:doOnMouseMove(dx, dy)
+function UI:doOnMouseMove(dx, dy)
 
     local showInvTooltipForItem = nil
     local item = nil
@@ -222,13 +205,9 @@ function PhunWalletContents:doOnMouseMove(dx, dy)
                 if item and item.boa then
                     tooltip = self.parent.tooltip
                     local viewer = self.parent.playerObj
-                    local wallet = PhunWallet:getPlayerData(viewer).wallet or {
-                        current = {},
-                        bound = {}
-                    }
                     tooltip:setName(item.label)
                     tooltip.description = getText("IGUI_PhunWallet.BalanceReplenishedOnDeath",
-                        PhunTools:formatWholeNumber(wallet.bound[item.key] or 0))
+                        formatWholeNumber(self.data[item.key] or 0))
                     if not tooltip:isVisible() then
 
                         tooltip:addToUIManager();
@@ -242,5 +221,71 @@ function PhunWalletContents:doOnMouseMove(dx, dy)
             end
         end
     end
+end
+
+local function moveEntry(tbl, fromIndex, toIndex)
+    -- Ensure the indices are within the valid range
+    if fromIndex < 1 or fromIndex > #tbl or toIndex < 1 or toIndex > #tbl then
+        return tbl -- Return the table unchanged if indices are out of range
+    end
+
+    -- Extract the entry
+    local entry = table.remove(tbl, fromIndex)
+
+    -- Insert the entry at the new position
+    table.insert(tbl, toIndex, entry)
+
+    return tbl
+end
+local function addCharacterPageTab(tabName, pageType, label)
+    local viewName = tabName .. "View"
+    local upperLayer_ISCharacterInfoWindow_createChildren = ISCharacterInfoWindow.createChildren
+    function ISCharacterInfoWindow:createChildren()
+        upperLayer_ISCharacterInfoWindow_createChildren(self)
+        self[viewName] = pageType:new(0, 8, self.width, self.height - 8, self.playerNum)
+        self[viewName]:initialise()
+        self[viewName].infoText = getText("UI_" .. tabName .. "Panel");
+        self.panel:addView(label, self[viewName])
+        moveEntry(self.panel.viewList, #self.panel.viewList, 4)
+    end
+
+    local upperLayer_ISCharacterInfoWindow_onTabTornOff = ISCharacterInfoWindow.onTabTornOff
+    function ISCharacterInfoWindow:onTabTornOff(view, window)
+        if self.playerNum == 0 and view == self[viewName] then
+            ISLayoutManager.RegisterWindow('charinfowindow.' .. tabName, ISCollapsableWindow, window)
+        end
+        upperLayer_ISCharacterInfoWindow_onTabTornOff(self, view, window)
+
+    end
+
+    local upperLayer_ISCharacterInfoWindow_SaveLayout = ISCharacterInfoWindow.SaveLayout
+    function ISCharacterInfoWindow:SaveLayout(name, layout)
+        upperLayer_ISCharacterInfoWindow_SaveLayout(self, name, layout)
+
+        local tabs = {}
+        if self[viewName].parent == self.panel then
+            table.insert(tabs, tabName)
+            if self[viewName] == self.panel:getActiveView() then
+                layout.current = tabName
+            end
+        end
+        if not layout.tabs then
+            layout.tabs = ""
+        end
+        layout.tabs = layout.tabs .. table.concat(tabs, ',')
+    end
+end
+
+addCharacterPageTab("PhunWallet", PhunWalletUI, "Wallet")
+
+Events[PW.events.OnPhunWalletInied] = function()
 
 end
+
+local function setup()
+    if PW.inied then
+        Events.EveryOneMinute.Remove(setup)
+        PhunWalletUI.instance:refreshData()
+    end
+end
+Events.EveryOneMinute.Add(setup)

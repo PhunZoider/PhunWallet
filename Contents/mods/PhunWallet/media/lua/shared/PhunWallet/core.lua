@@ -2,9 +2,6 @@ PhunWallet = {
     inied = false,
     name = "PhunWallet",
     commands = {
-        dataLoaded = "dataLoaded",
-        reload = "reload",
-        requestData = "requestData",
         getWallet = "getWallet",
         getCurrencies = "getCurrencies",
         addToWallet = "addToWallet",
@@ -13,15 +10,52 @@ PhunWallet = {
         adjustPlayerWallet = "adjustPlayerWallet",
         logPlayerDroppedWallet = "logPlayerDroppedWallet"
     },
+    const = {
+        currenciesFile = "PhunWallet_Currencies.lua",
+        playersFile = "PhunWallet_Players.lua",
+        currencies = "PhunWallet_Currencies",
+        players = "PhunWallet_Players"
+    },
     ticks = 100,
     playersModified = 0,
     playersSaved = 0,
     players = {},
-    currencies = {},
+    currencies = {
+        ["PhunMart.SilverDollar"] = {
+            type = "PhunMart.SilverDollar",
+            zedSpawnChance = 1,
+            zedSprinterSpawnChance = 5,
+            spawnMin = 1,
+            spawnMax = 2,
+            removeFromContainers = true,
+            removeFromZeds = false
+        },
+        ["PhunMart.CheeseToken"] = {
+            type = "PhunMart.CheeseToken",
+            boa = false,
+            zedSpawnChance = 0,
+            zedSprinterSpawnChance = 3,
+            spawnMin = 1,
+            spawnMax = 2,
+            removeFromContainers = true,
+            removeFromZeds = false
+        },
+        ["PhunMart.TraiterToken"] = {
+            type = "PhunMart.TraiterToken",
+            boa = true,
+            zedSpawnChance = 0,
+            zedSprinterSpawnChance = 1,
+            spawnMin = 1,
+            spawnMax = 2,
+            removeFromContainers = true,
+            removeFromZeds = false
+        }
+    },
     zoneInfo = {},
+    ui = {},
     events = {
         OnPhunWalletChanged = "OnPhunWalletChanged",
-        OnPhunWalletCurrenciesUpdated = "OnPhunWalletCurrenciesUpdated"
+        OnPhunWalletInied = "OnPhunWalletInied"
     },
     settings = {
         debug = true
@@ -30,20 +64,41 @@ PhunWallet = {
     zones = {}
 }
 
-for _, event in pairs(PhunWallet.events) do
+local Core = PhunWallet
+Core.settings = SandboxVars[Core.name] or {}
+
+for _, event in pairs(Core.events) do
     if not Events[event] then
         LuaEventManager.AddEvent(event)
     end
 end
 
-function PhunWallet:debug(...)
-    if self.settings.debug then
-        local args = {...}
-        PhunTools:debug(args)
+function Core:debug(...)
+
+    local args = {...}
+    for i, v in ipairs(args) do
+        if type(v) == "table" then
+            self:printTable(v)
+        else
+            print(tostring(v))
+        end
+    end
+
+end
+
+function Core:printTable(t, indent)
+    indent = indent or ""
+    for key, value in pairs(t or {}) do
+        if type(value) == "table" then
+            print(indent .. key .. ":")
+            Core:printTable(value, indent .. "  ")
+        elseif type(value) ~= "function" then
+            print(indent .. key .. ": " .. tostring(value))
+        end
     end
 end
 
-function PhunWallet:getPlayerData(playerObj)
+function Core:getPlayerData(playerObj)
     local key = nil
     if type(playerObj) == "string" then
         key = playerObj
@@ -73,14 +128,14 @@ function PhunWallet:getPlayerData(playerObj)
     end
 end
 
-function PhunWallet:processCurrencyLabelHook(key)
+function Core:processCurrencyLabelHook(key)
     if self.currencies[key] then
         local item = getScriptManager():getItem(key)
         return item:getDisplayName(), "PhunWallet"
     end
 end
 
-function PhunWallet:processPrePurchaseHook(playerObj, sourceType, key, value)
+function Core:processPrePurchaseHook(playerObj, sourceType, key, value)
     -- mutate value, but don't actually change the wallet value
     -- this is used to ensure the player has enough currency to make a purchase
     if sourceType ~= "PhunWallet" then
@@ -100,7 +155,7 @@ function PhunWallet:processPrePurchaseHook(playerObj, sourceType, key, value)
     end
 end
 
-function PhunWallet:processPurchaseHook(playerObj, sourceType, key, value)
+function Core:processPurchaseHook(playerObj, sourceType, key, value)
     if sourceType ~= "PhunWallet" then
         return
     end
@@ -120,7 +175,7 @@ function PhunWallet:processPurchaseHook(playerObj, sourceType, key, value)
     end
 end
 
-function PhunWallet:satisfyPriceHook(playerObj, item, satisfied, allocation)
+function Core:satisfyPriceHook(playerObj, item, satisfied, allocation)
     if satisfied and playerObj and playerObj then
 
         local wallet = self:getPlayerData(playerObj).wallet or {}
@@ -152,13 +207,11 @@ function PhunWallet:satisfyPriceHook(playerObj, item, satisfied, allocation)
     end
 end
 
-function PhunWallet:ini()
+function Core:ini()
     if not self.inied then
         self.inied = true
-        if isServer() then
-            self.players = ModData.getOrCreate("PhunWallet_Players")
-            self:reload()
-        end
+
+        self.players = ModData.getOrCreate(Core.const.players)
 
         if PhunMart then
             -- add some hooks
@@ -178,6 +231,7 @@ function PhunWallet:ini()
                 self:processPurchaseHook(playerObj, type, key, value)
             end)
         end
+        triggerEvent(self.events.OnPhunWalletInied, self)
 
     end
 

@@ -1,5 +1,5 @@
 version=1
-id=3362308818
+id=3397846547
 title=PhunWallet
 description=Character and player bound wallets.
 description=
@@ -17,5 +17,5 @@ description=
 description=Configuration
 description=
 description=The server admin will need to upload a PhunWallet_Currencies.lua file to their Lua folder on the server. An example of the file can be found in the [url=https://github.com/PhunZoider/PhunWallet/tree/main/ServerFiles/Lua]repo here[/url]
-tags=Build 41
-visibility=public
+tags=
+visibility=unlisted

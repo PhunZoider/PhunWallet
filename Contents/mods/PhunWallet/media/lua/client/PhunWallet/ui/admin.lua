@@ -1,37 +1,72 @@
-PhunWalletAdminUI = ISPanel:derive("PhunWalletAdminUI");
-PhunWalletAdminUI.instance = nil;
-local PhunWallet = PhunWallet
-local PhunTools = PhunTools
+if isServer() then
+    return
+end
+
+require "ISUI/ISPanel"
+local tableTools = require "PhunWallet/table"
+local PW = PhunWallet
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 local FONT_HGT_MEDIUM = getTextManager():getFontHeight(UIFont.Medium)
 local FONT_HGT_LARGE = getTextManager():getFontHeight(UIFont.Large)
+local FONT_SCALE = FONT_HGT_SMALL / 14
+local HEADER_HGT = FONT_HGT_MEDIUM + 2 * 2
+
+local windowName = "PhunWalletAdminUI"
+
+PW.ui.admin = ISPanel:derive(windowName);
+PW.ui.admin.instances = {}
+local UI = PW.ui.admin
+
+local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
+local FONT_HGT_MEDIUM = getTextManager():getFontHeight(UIFont.Medium)
+local FONT_HGT_LARGE = getTextManager():getFontHeight(UIFont.Large)
+
 local function refreshPlayers()
-    sendClientCommand(PhunWallet.name, PhunWallet.commands.getPlayerList, {})
+    sendClientCommand(PW.name, PW.commands.getPlayerList, {})
 end
 
-local function refreshPlayerWallet(player)
-    sendClientCommand(PhunWallet.name, PhunWallet.commands.getPlayersWallet, {
-        player = player
+local function refreshPlayerWallet(playername)
+    sendClientCommand(PW.name, PW.commands.getPlayersWallet, {
+        playername = playername
     })
 end
 
-function PhunWalletAdminUI.OnOpenPanel()
-    if isAdmin() then
-        if PhunWalletAdminUI.instance == nil then
-            PhunWalletAdminUI.instance = PhunWalletAdminUI:new(100, 100, 400, 400, getPlayer());
-            PhunWalletAdminUI.instance:initialise();
-            PhunWalletAdminUI.instance:instantiate();
-            refreshPlayers()
-        end
-
-        PhunWalletAdminUI.instance:addToUIManager();
-        PhunWalletAdminUI.instance:setVisible(true);
-
-        return PhunWalletAdminUI.instance;
-    end
+local function formatWholeNumber(number)
+    number = number or 0
+    -- Round the number to remove the decimal part
+    local roundedNumber = math.floor(number + 0.5)
+    -- Convert to string and format with commas
+    local formattedNumber = tostring(roundedNumber):reverse():gsub("(%d%d%d)", "%1,")
+    formattedNumber = formattedNumber:reverse():gsub("^,", "")
+    return formattedNumber
 end
 
-function PhunWalletAdminUI:setPlayers(players)
+function UI.OnOpenPanel(player)
+
+    local playerIndex = player:getPlayerNum()
+    local instance = UI.instances[playerIndex]
+    if not instance then
+        local core = getCore()
+        local FONT_SCALE = getTextManager():getFontHeight(UIFont.Small) / 14
+        local width = 350
+        local height = 400
+
+        local x = (core:getScreenWidth() - width) / 2
+        local y = (core:getScreenHeight() - height) / 2
+
+        instance = UI:new(x, y, width, height, player);
+        instance:initialise();
+
+        UI.instances[playerIndex] = instance
+    end
+    instance:addToUIManager();
+    instance:setVisible(true);
+    refreshPlayers()
+    return instance;
+
+end
+
+function UI:setPlayers(players)
     self.box:clear()
     table.sort(players, function(a, b)
         return a < b
@@ -42,34 +77,34 @@ function PhunWalletAdminUI:setPlayers(players)
     refreshPlayerWallet(self.box:getSelectedText())
 end
 
-function PhunWalletAdminUI:setWallet(wallet)
+function UI:setWallet(wallet)
     self.datas:clear();
     local bound = {}
-    for k, v in pairs(PhunWallet.currencies or {}) do
+    for k, v in pairs(PW.currencies or {}) do
         local item = getScriptManager():getItem(v.type)
         if item then
-            v.label = item:getDisplayName()
+            v.label = item:getDisplayName() or k
             v.texture = item:getNormalTexture()
-            v.value = PhunTools:formatWholeNumber(wallet.current[k] or 0)
+            v.value = formatWholeNumber(wallet.current[k] or 0)
         end
         self.datas:addItem(k, v)
         if v.boa then
-            bound[k] = PhunTools:shallowCopyTable(v)
+            bound[k] = tableTools:shallowCopyTable(v)
             bound[k].isBoa = true
         end
     end
 
     for k, v in pairs(bound) do
-        v.value = PhunTools:formatWholeNumber(wallet.bound[k] or 0)
+        v.value = formatWholeNumber(wallet.bound[k] or 0)
         self.datas:addItem("BOA:" .. k, v)
     end
 end
 
-function PhunWalletAdminUI:promptForValue(playerName, walletType, currencyType, value)
+function UI:promptForValue(playerName, walletType, currencyType, value)
     local modal = ISTextBox:new(0, 0, 280, 180, currencyType .. "(" .. walletType .. ") for " .. playerName,
         tostring(value), nil, function(target, button, obj)
             if button.internal == "OK" then
-                sendClientCommand(PhunWallet.name, PhunWallet.commands.adjustPlayerWallet, {
+                sendClientCommand(PW.name, PW.commands.adjustPlayerWallet, {
                     player = playerName,
                     walletType = walletType,
                     currencyType = currencyType,
@@ -77,12 +112,12 @@ function PhunWalletAdminUI:promptForValue(playerName, walletType, currencyType, 
                 })
             end
 
-        end, self.viewer:getPlayerNum())
+        end, self.playerIndex)
     modal:initialise()
     modal:addToUIManager()
 end
 
-function PhunWalletAdminUI:GridDoubleClick(item)
+function UI:GridDoubleClick(item)
     local player = self.box:getSelectedText()
     if player then
         local walletType = item.isBoa and "bound" or "current"
@@ -90,7 +125,7 @@ function PhunWalletAdminUI:GridDoubleClick(item)
     end
 end
 
-function PhunWalletAdminUI:createChildren()
+function UI:createChildren()
     ISPanel.createChildren(self);
 
     local x = 10
@@ -103,7 +138,7 @@ function PhunWalletAdminUI:createChildren()
     self:addChild(self.title);
 
     self.closeButton = ISButton:new(self.width - 25 - x, y, 25, 25, "X", self, function()
-        PhunWalletAdminUI.OnOpenPanel():close()
+        UI.OnOpenPanel(self.player):close()
     end);
     self.closeButton:initialise();
     self:addChild(self.closeButton);
@@ -142,7 +177,7 @@ function PhunWalletAdminUI:createChildren()
     self:addChild(self.datas);
 
     self.datas:clear();
-    for k, v in pairs(PhunWallet.currencies or {}) do
+    for k, v in pairs(PW.currencies or {}) do
         local item = getScriptManager():getItem(v.type)
         if item then
             v.label = item:getDisplayName()
@@ -156,7 +191,7 @@ function PhunWalletAdminUI:createChildren()
 
 end
 
-function PhunWalletAdminUI:drawDatas(y, item, alt)
+function UI:drawDatas(y, item, alt)
 
     if y + self:getYScroll() + self.itemheight < 0 or y + self:getYScroll() >= self.height then
         return y + self.itemheight
@@ -189,19 +224,13 @@ function PhunWalletAdminUI:drawDatas(y, item, alt)
         self:drawTextureScaledAspect2(item.item.texture, xoffset, y + 4, item.height - 4, item.height - 8, 1, 1, 1, 1)
         xoffset = xoffset + item.height + 4
     end
-    local label = item.item.label
+    local label = item.item.label or item.text or ""
     if item.item.isBoa then
         label = label .. " (bound)"
     end
     self:drawText(label, xoffset, y + 4, 1, 1, 1, a, self.font);
     self:clearStencilRect()
 
-    -- local viewer = self.parent.playerObj
-    -- local wallet = self.wallet or {}
-    -- if not wallet.current then
-    --     wallet.current = {}
-    -- end
-    -- local value = PhunTools:formatWholeNumber(wallet.current[item.item.key] or 0)
     local valueWidth = getTextManager():MeasureStringX(self.font, item.item.value)
     local w = self.width
     local cw = self.columns[2].size
@@ -211,18 +240,19 @@ function PhunWalletAdminUI:drawDatas(y, item, alt)
     return self.itemsHeight;
 end
 
-function PhunWalletAdminUI:close()
+function UI:close()
     self:setVisible(false);
     self:removeFromUIManager();
-    PhunWalletAdminUI.instance = nil
+    UI.instance = nil
 end
 
-function PhunWalletAdminUI:new(x, y, width, height, player)
+function UI:new(x, y, width, height, player)
     local o = {};
     o = ISPanel:new(x, y, width, height, player);
     setmetatable(o, self);
     self.__index = self;
-    o.viewer = player
+    o.player = player
+    o.playerIndex = player:getPlayerNum()
     o.variableColor = {
         r = 0.9,
         g = 0.55,
@@ -254,21 +284,25 @@ end
 
 local Commands = {}
 
-Commands[PhunWallet.commands.getPlayerList] = function(args)
-    if PhunWalletAdminUI.instance then
-        PhunWalletAdminUI.instance:setPlayers(args.players)
+Commands[PW.commands.getPlayerList] = function(args)
+    if UI.instances then
+        for _, instance in pairs(UI.instances) do
+            instance:setPlayers(args.players)
+        end
     end
 end
 
-Commands[PhunWallet.commands.getPlayersWallet] = function(args)
-    if PhunWalletAdminUI.instance then
-        PhunWalletAdminUI.instance:setWallet(args.wallet)
+Commands[PW.commands.getPlayersWallet] = function(args)
+    if UI.instances then
+        for _, instance in pairs(UI.instances) do
+            instance:setWallet(args.wallet)
+        end
     end
 end
 
 -- Listen for commands from the server
 Events.OnServerCommand.Add(function(module, command, arguments)
-    if module == PhunWallet.name and Commands[command] then
+    if module == PW.name and Commands[command] then
         Commands[command](arguments)
     end
 end)
