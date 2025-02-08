@@ -1,7 +1,11 @@
 if isClient() then
     return
 end
-local fileTools = require("PhunWallet/files")
+require "PhunLib/core"
+local PL = PhunLib
+local fileTools = PL.file
+local tableTools = PL.table
+
 local PW = PhunWallet
 local Commands = {}
 
@@ -45,7 +49,7 @@ Commands[PW.commands.getCurrencies] = function(playerObj, args)
 end
 
 Commands[PW.commands.logPlayerDroppedWallet] = function(playerObj, args)
-    fileTools:addLogEntry(args.note or "Dropped Wallet", playerObj:getUsername(), args.currency, args.value)
+    fileTools.log(args.note or "Dropped Wallet", playerObj:getUsername(), args.currency, args.value)
 end
 
 Commands[PW.commands.addToWallet] = function(playerObj, args)

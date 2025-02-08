@@ -3,5 +3,5 @@ name=PhunWallet
 id=phunwallet
 authors=UburGeek
 description=BoP Wallet and currency management
-require=phunmart
+require=phunlib,phunmart
 poster=poster.png

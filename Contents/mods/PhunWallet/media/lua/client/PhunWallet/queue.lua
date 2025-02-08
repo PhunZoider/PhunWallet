@@ -68,7 +68,9 @@ function queue:complete(args)
         end
     else
         local invItem = playerObj:getInventory():getItemFromTypeRecurse("PhunWallet.DroppedWallet")
-        invItem:getContainer():DoRemoveItem(invItem)
+        if invItem then -- ?
+            invItem:getContainer():DoRemoveItem(invItem)
+        end
         getSoundManager():PlaySound("PhunWallet_Pickup", false, 0):setVolume(0.50);
     end
 

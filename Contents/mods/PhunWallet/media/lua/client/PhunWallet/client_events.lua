@@ -22,6 +22,11 @@ Events.OnPreFillWorldObjectContextMenu.Add(function(playerObj, context, worldobj
     PW:showContext(playerObj, context, worldobjects)
 end);
 
+Events.OnCreatePlayer.Add(function(index, playerObj)
+    PW:ini()
+    sendClientCommand(playerObj, PW.name, PW.commands.getWallet, {})
+end)
+
 Events.OnCharacterDeath.Add(function(playerObj)
     if instanceof(playerObj, "IsoPlayer") and playerObj:isLocalPlayer() then
         local wallet = PW:getPlayerData(playerObj).wallet

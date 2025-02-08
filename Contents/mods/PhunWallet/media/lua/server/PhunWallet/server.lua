@@ -1,7 +1,10 @@
 if isClient() then
     return
 end
-local fileTools = require("PhunWallet/files")
+
+require "PhunLib/core"
+local PL = PhunLib
+local fileTools = PL.file
 local PW = PhunWallet
 local modList
 
@@ -45,7 +48,7 @@ function PW:adjustWallet(playerObj, values, doNotAddBound)
 
     for k, v in pairs(values) do
 
-        if PW.currencies[k] then
+        if self.currencies[k] then
             local currency = PW.currencies[k]
             local data = PW:getPlayerData(playerObj)
             if not data.wallet then
@@ -61,7 +64,7 @@ function PW:adjustWallet(playerObj, values, doNotAddBound)
 
             local target = wallet.current
 
-            fileTools:addLogEntry("PhunWallet:adjustWallet", playerObj:getUsername(), k, v)
+            fileTools.log("PhunWallet:adjustWallet", playerObj:getUsername(), k, v)
 
             if target[k] then
                 target[k] = target[k] + v
@@ -103,7 +106,7 @@ function PW:adjustPlayerWallet(playerName, walletType, currency, value, note)
         if ((target[currency] or 0) + value) < 0 then
             return false
         end
-        fileTools:addLogEntry(tostring(note or "PhunWallet:adjustPlayerWallet"), playerName, currency, value)
+        fileTools.log(tostring(note or "PhunWallet:adjustPlayerWallet"), playerName, currency, value)
         if target[currency] then
             target[currency] = target[currency] + value
         else
@@ -130,7 +133,7 @@ end
 
 function PW:savePlayers()
     if PW.playersModified > PW.playersSaved then
-        fileTools:saveTable(PW.const.playersFile, PW.players)
+        fileTools.saveTable(PW.const.playersFile, PW.players)
         PW.playersSaved = getTimestamp()
     end
 end

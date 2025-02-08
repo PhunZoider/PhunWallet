@@ -3,7 +3,9 @@ if isServer() then
 end
 
 require "ISUI/ISPanel"
-local tableTools = require "PhunWallet/table"
+require "PhunLib/core"
+local PL = PhunLib
+local tableTools = PL.table
 local PW = PhunWallet
 local FONT_HGT_SMALL = getTextManager():getFontHeight(UIFont.Small)
 local FONT_HGT_MEDIUM = getTextManager():getFontHeight(UIFont.Medium)
@@ -89,7 +91,7 @@ function UI:setWallet(wallet)
         end
         self.datas:addItem(k, v)
         if v.boa then
-            bound[k] = tableTools:shallowCopyTable(v)
+            bound[k] = tableTools.shallowCopy(v)
             bound[k].isBoa = true
         end
     end
